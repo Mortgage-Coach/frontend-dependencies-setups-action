@@ -1,0 +1,38 @@
+name: Setup Dependencies
+description: Setup Node, NPM, and Install Dependencies
+
+inputs:
+    github_npm_pat:
+        description: "Github PAT to Access Github NPM Registery"
+        required: true
+
+runs:
+    using: "composite"
+
+    steps:
+        - name: Use Node.js 16.13.0
+          uses: actions/setup-node@v3
+          with:
+              node-version: 16.13.0
+
+        - name: Set NPM Version
+          shell: bash
+          run: npm i -g npm@8.1.4 --registry=https://registry.npmjs.org
+
+        - name: Cache node modules
+          id: cache-npm
+          uses: actions/cache@v3
+          env:
+              cache-name: cache-node-modules
+          with:
+              path: |
+                  ./node_modules
+              key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+
+        - name: Install Dependencies
+          shell: bash
+          run: |
+              (echo "//npm.pkg.github.com/:_authToken=${{ inputs.github_npm_pat }}"; cat .npmrc) > temp.txt
+              cat temp.txt > .npmrc
+              rm temp.txt
+              npm install
